@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "skool-intelligence": {
+      "url": "https://ajengayu89--skool-intelligence-scraper.apify.actor/mcp",
+      "headers": {
+        "Authorization": "Bearer <YOUR_APIFY_TOKEN>"
+      }
+    },
+    "patreon-intelligence": {
+      "url": "https://ajengayu89--patreon-intelligence-scraper.apify.actor/mcp",
+      "headers": {
+        "Authorization": "Bearer <YOUR_APIFY_TOKEN>"
+      }
+    },
+    "substack-intelligence": {
+      "url": "https://ajengayu89--substack-intelligence-scraper.apify.actor/mcp",
+      "headers": {
+        "Authorization": "Bearer <YOUR_APIFY_TOKEN>"
+      }
+    },
+    "producthunt-intelligence": {
+      "url": "https://ajengayu89--producthunt-intelligence-scraper.apify.actor/mcp",
+      "headers": {
+        "Authorization": "Bearer <YOUR_APIFY_TOKEN>"
+      }
+    }
+  }
+}

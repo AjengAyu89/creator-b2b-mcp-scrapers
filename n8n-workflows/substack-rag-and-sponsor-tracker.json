@@ -1,0 +1,248 @@
+{
+  "name": "Substack RAG Markdown & Sponsor Tracker (HTTP-First Apify)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Setup Instructions\n1. Replace `<YOUR_APIFY_TOKEN>` in **Fetch Substack Publications & Posts (Apify)** (Header: `Authorization: Bearer <YOUR_APIFY_TOKEN>`).\n2. Edit `targets` in the JSON body to track your niche keywords, Substack URLs, or custom domains (e.g. `https://www.lennysnewsletter.com`, `AI`).\n3. Connect your **Google Sheets OAuth2** credentials in **Append to Google Sheets**.\n4. Recommended columns: `recordType`, `publicationName`, `title`, `url`, `isPaywalled`, `readingTimeMinutes`, `outboundDomains`, `emails`, `bodyMarkdown`, `publishedAt`, `scrapedAt`.\n5. `incrementalMode: true` tracks state via `substack-delta-state` so only new/updated items are emitted.",
+        "height": 270,
+        "width": 540,
+        "color": 5
+      },
+      "id": "b1b2c3d4-0002-4000-8000-000000000001",
+      "name": "Setup Guide",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [220, 60]
+    },
+    {
+      "parameters": {},
+      "id": "b1b2c3d4-0002-4000-8000-000000000002",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 380]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "id": "b1b2c3d4-0002-4000-8000-000000000003",
+      "name": "Daily Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 560]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/ajengayu89~substack-intelligence-scraper/run-sync-get-dataset-items",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <YOUR_APIFY_TOKEN>"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"mode\": \"all\",\n  \"targets\": [\n    \"https://www.lennysnewsletter.com\",\n    \"AI\"\n  ],\n  \"maxItems\": 25,\n  \"includeMarkdown\": true,\n  \"onlyFree\": false,\n  \"enrichContacts\": true,\n  \"incrementalMode\": true,\n  \"stateKey\": \"substack-delta-state\"\n}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "b1b2c3d4-0002-4000-8000-000000000004",
+      "name": "Fetch Substack Publications & Posts (Apify)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [520, 460]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "map-record-type",
+              "name": "recordType",
+              "value": "={{ $json.recordType }}",
+              "type": "string"
+            },
+            {
+              "id": "map-pub-name",
+              "name": "publicationName",
+              "value": "={{ $json.publicationName }}",
+              "type": "string"
+            },
+            {
+              "id": "map-title",
+              "name": "title",
+              "value": "={{ $json.title || $json.publicationName }}",
+              "type": "string"
+            },
+            {
+              "id": "map-url",
+              "name": "url",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            },
+            {
+              "id": "map-paywalled",
+              "name": "isPaywalled",
+              "value": "={{ $json.isPaywalled ?? false }}",
+              "type": "boolean"
+            },
+            {
+              "id": "map-reading-time",
+              "name": "readingTimeMinutes",
+              "value": "={{ $json.readingTimeMinutes ?? 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "map-outbound-domains",
+              "name": "outboundDomains",
+              "value": "={{ ($json.outboundDomains || []).join(', ') }}",
+              "type": "string"
+            },
+            {
+              "id": "map-emails",
+              "name": "emails",
+              "value": "={{ ($json.emails || []).join(', ') }}",
+              "type": "string"
+            },
+            {
+              "id": "map-body-markdown",
+              "name": "bodyMarkdown",
+              "value": "={{ ($json.bodyMarkdown || '').slice(0, 45000) }}",
+              "type": "string"
+            },
+            {
+              "id": "map-published-at",
+              "name": "publishedAt",
+              "value": "={{ $json.publishedAt || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "map-scraped-at",
+              "name": "scrapedAt",
+              "value": "={{ $json.scrapedAt }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b1b2c3d4-0002-4000-8000-000000000005",
+      "name": "Map Markdown & Sponsor Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [780, 460]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "<YOUR_GOOGLE_SHEET_ID>",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "SubstackIntel",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "recordType": "={{ $json.recordType }}",
+            "publicationName": "={{ $json.publicationName }}",
+            "title": "={{ $json.title }}",
+            "url": "={{ $json.url }}",
+            "isPaywalled": "={{ $json.isPaywalled }}",
+            "readingTimeMinutes": "={{ $json.readingTimeMinutes }}",
+            "outboundDomains": "={{ $json.outboundDomains }}",
+            "emails": "={{ $json.emails }}",
+            "bodyMarkdown": "={{ $json.bodyMarkdown }}",
+            "publishedAt": "={{ $json.publishedAt }}",
+            "scrapedAt": "={{ $json.scrapedAt }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "b1b2c3d4-0002-4000-8000-000000000006",
+      "name": "Append to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1040, 460]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Substack Publications & Posts (Apify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Substack Publications & Posts (Apify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Substack Publications & Posts (Apify)": {
+      "main": [
+        [
+          {
+            "node": "Map Markdown & Sponsor Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Markdown & Sponsor Fields": {
+      "main": [
+        [
+          {
+            "node": "Append to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "20000000-0000-4000-8000-000000000002",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
